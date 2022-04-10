@@ -7,6 +7,11 @@ import time
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from socketserver import ThreadingMixIn
+from prometheus_client import MetricsHandler, Counter
+from urllib.parse import urlparse
+
+batch_jobs = Counter('batch_jobs', 'Total number of batch jobs executed')
+batch_jobs_failed = Counter('batch_jobs_failed', 'Total number of batch jobs failed')
 
 def handler_404(self):
     self.send_response(404)
@@ -28,12 +33,15 @@ def handler_bar(self):
 
 ROUTES = {
     "/api/foo": handler_foo,
-    "/api/bar": handler_bar,
+    "/api/bar": handler_bar
 }
 
-class Handler(BaseHTTPRequestHandler):
+class Handler(MetricsHandler):
     def do_GET(self):
-        ROUTES.get(self.path, handler_404)(self)
+        endpoint = urlparse(self.path).path
+        if endpoint == '/metrics':
+            return super(Handler, self).do_GET()
+        return ROUTES.get(endpoint, handler_404)(self)
 
 class MultiThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     pass
@@ -55,6 +63,8 @@ def background_task():
             logging.info("Background task completed successfully.")
         else:
             logging.warning("Background task failed.")
+            batch_jobs_failed.inc()
+        batch_jobs.inc()
 
         time.sleep(5)
 

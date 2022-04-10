@@ -2,6 +2,10 @@
 
 [Prometheus](https://prometheus.io/) instrumentation exercise in Python 3. Based on [juliusv/instrumentation-exercise](https://github.com/juliusv/instrumentation-exercise)
 
+## Dependencies
+
+- [prometheus-client](https://github.com/prometheus/client_python)
+
 ## Resources
 
 Learn about Prometheus:
