@@ -9,9 +9,6 @@ from http.server import HTTPServer
 from socketserver import ThreadingMixIn
 from prometheus_client import MetricsHandler, Counter, Gauge
 from urllib.parse import urlparse
-from datetime import datetime
-
-print(time.mktime(datetime.now().timetuple()))
 
 batch_jobs = Counter('batch_jobs', 'Total number of batch jobs executed')
 batch_jobs_failed = Counter('batch_jobs_failed', 'Total number of batch jobs failed')
@@ -65,7 +62,7 @@ def background_task():
         # Simulate the background task either succeeding or failing (with a 30% probability).
         if random.random() > 0.3:
             logging.info("Background task completed successfully.")
-            batch_jobs_last_success.set(time.mktime(datetime.now().timetuple()))
+            batch_jobs_last_success.set_to_current_time()
         else:
             logging.warning("Background task failed.")
             batch_jobs_failed.inc()
