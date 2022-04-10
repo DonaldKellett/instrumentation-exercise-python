@@ -4,9 +4,9 @@ import logging
 import random
 import threading
 import time
-from BaseHTTPServer import BaseHTTPRequestHandler
-from BaseHTTPServer import HTTPServer
-from SocketServer import ThreadingMixIn
+from http.server import BaseHTTPRequestHandler
+from http.server import HTTPServer
+from socketserver import ThreadingMixIn
 
 def handler_404(self):
     self.send_response(404)
@@ -16,7 +16,7 @@ def handler_foo(self):
     time.sleep(.075 + random.random() * .05)
     self.send_response(200)
     self.end_headers()
-    self.wfile.write("Handled foo")
+    self.wfile.write(b"Handled foo")
 
 def handler_bar(self):
     logging.info("Handling bar...")
@@ -24,7 +24,7 @@ def handler_bar(self):
 
     self.send_response(200)
     self.end_headers()
-    self.wfile.write("Handled bar")
+    self.wfile.write(b"Handled bar")
 
 ROUTES = {
     "/api/foo": handler_foo,
@@ -54,7 +54,7 @@ def background_task():
         if random.random() > 0.3:
             logging.info("Background task completed successfully.")
         else:
-            logging.warn("Background task failed.")
+            logging.warning("Background task failed.")
 
         time.sleep(5)
 
