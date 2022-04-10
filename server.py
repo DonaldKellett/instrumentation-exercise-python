@@ -10,12 +10,16 @@ from socketserver import ThreadingMixIn
 from prometheus_client import MetricsHandler, Counter, Gauge
 from urllib.parse import urlparse
 
+api_requests = Counter('api_requests', 'Total number of API requests', ['method', 'path', 'status'])
+api_requests.labels(method='GET', path='/api/foo', status=200)
+api_requests.labels(method='GET', path='/api/bar', status=200)
 batch_jobs = Counter('batch_jobs', 'Total number of batch jobs executed')
 batch_jobs_failed = Counter('batch_jobs_failed', 'Total number of batch jobs failed')
 batch_jobs_last_success = Gauge('batch_jobs_last_success', 'UNIX timestamp of last successful batch job')
 
 def handler_404(self):
     self.send_response(404)
+    api_requests.labels(method=self.command,path=self.path,status=404).inc()
 
 def handler_foo(self):
     logging.info("Handling foo...")
@@ -23,6 +27,7 @@ def handler_foo(self):
     self.send_response(200)
     self.end_headers()
     self.wfile.write(b"Handled foo")
+    api_requests.labels(method=self.command,path=self.path,status=200).inc()
 
 def handler_bar(self):
     logging.info("Handling bar...")
@@ -31,6 +36,7 @@ def handler_bar(self):
     self.send_response(200)
     self.end_headers()
     self.wfile.write(b"Handled bar")
+    api_requests.labels(method=self.command,path=self.path,status=200).inc()
 
 ROUTES = {
     "/api/foo": handler_foo,
