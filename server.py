@@ -7,36 +7,47 @@ import time
 from http.server import BaseHTTPRequestHandler
 from http.server import HTTPServer
 from socketserver import ThreadingMixIn
-from prometheus_client import MetricsHandler, Counter, Gauge
+from prometheus_client import MetricsHandler, Counter, Gauge, Histogram
 from urllib.parse import urlparse
 
-api_requests = Counter('api_requests', 'Total number of API requests', ['method', 'path', 'status'])
-api_requests.labels(method='GET', path='/api/foo', status=200)
-api_requests.labels(method='GET', path='/api/bar', status=200)
+request_latency_seconds = Histogram('request_latency_seconds', 'Request latency in seconds', ['method', 'path', 'status'])
+request_latency_seconds.labels(method='GET', path='/api/foo', status=200)
+request_latency_seconds.labels(method='GET', path='/api/bar', status=200)
 batch_jobs = Counter('batch_jobs', 'Total number of batch jobs executed')
 batch_jobs_failed = Counter('batch_jobs_failed', 'Total number of batch jobs failed')
 batch_jobs_last_success = Gauge('batch_jobs_last_success', 'UNIX timestamp of last successful batch job')
+api_requests = Counter('api_requests', 'Total number of API requests', ['method', 'path', 'status'])
+api_requests.labels(method='GET', path='/api/foo', status=200)
+api_requests.labels(method='GET', path='/api/bar', status=200)
 
 def handler_404(self):
+    start = time.time()
     self.send_response(404)
-    api_requests.labels(method=self.command,path=self.path,status=404).inc()
+    end = time.time()
+    request_latency_seconds.labels(method=self.command, path=self.path, status=404).observe(end - start)
+    api_requests.labels(method=self.command, path=self.path, status=404).inc()
 
 def handler_foo(self):
+    start = time.time()
     logging.info("Handling foo...")
     time.sleep(.075 + random.random() * .05)
     self.send_response(200)
     self.end_headers()
     self.wfile.write(b"Handled foo")
-    api_requests.labels(method=self.command,path=self.path,status=200).inc()
+    end = time.time()
+    request_latency_seconds.labels(method=self.command, path=self.path, status=200).observe(end - start)
+    api_requests.labels(method=self.command, path=self.path, status=200).inc()
 
 def handler_bar(self):
+    start = time.time()
     logging.info("Handling bar...")
     time.sleep(.15 + random.random() * .1)
-
     self.send_response(200)
     self.end_headers()
     self.wfile.write(b"Handled bar")
-    api_requests.labels(method=self.command,path=self.path,status=200).inc()
+    end = time.time()
+    request_latency_seconds.labels(method=self.command, path=self.path, status=200).observe(end - start)
+    api_requests.labels(method=self.command, path=self.path, status=200).inc()
 
 ROUTES = {
     "/api/foo": handler_foo,
